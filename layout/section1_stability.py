@@ -101,8 +101,6 @@ def section1_stability_analysis():
                 ], className="mb-4")
             ], width=4),
             
-            # Empty column for balance
-            dbc.Col(width=4),
         ]),
         
         # Charts for Section 1
