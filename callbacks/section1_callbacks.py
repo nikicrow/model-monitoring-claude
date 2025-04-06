@@ -9,7 +9,10 @@ def register_callbacks_section1(app, df):
         Input('total-customers-chart', 'id')
     )
     def update_total_customers_chart(_):
-        monthly_totals = df.groupby('month')['customers'].sum().reset_index()
+        # Convert the 'month' column to datetime format
+        df['month'] = pd.to_datetime(df['month'], format='%b %Y') # Adjust format if necessary
+    
+        monthly_totals = df.groupby('month')['customers'].sum().reset_index().sort_values('month')
         
         fig = px.bar(
             monthly_totals, 
