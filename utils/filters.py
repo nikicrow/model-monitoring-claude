@@ -2,6 +2,8 @@ import pandas as pd
 
 def filter_by_month(df, selected_month):
     """Filter dataframe by selected month."""
+    print(selected_month)
+    print(df['month'])
     return df[df['month'] == selected_month]
 
 def get_latest_month(df):

@@ -2,13 +2,13 @@ import pandas as pd
 import numpy as np
 import datetime
 
+# Create date range for the last 6 months
+today = datetime.datetime(2025, 4, 5)
+dates = [(today - datetime.timedelta(days=30*i)).replace(day=4) for i in range(6)]
+dates.reverse()  # Oldest to newest
+
 # Create mock data
 def create_mock_data():
-    # Create date range for the last 6 months
-    today = datetime.datetime(2025, 4, 5)
-    dates = [(today - datetime.timedelta(days=30*i)).replace(day=4) for i in range(6)]
-    dates.reverse()  # Oldest to newest
-    
     # Total customers per month (around 2.5 million)
     base_customers = 2500000
     customer_counts = [
@@ -117,6 +117,36 @@ def create_mock_data():
     # Convert to DataFrame
     df = pd.DataFrame(monthly_data)
     
+    # Create ROC and PRC curve data
+    roc_x = np.linspace(0, 1, 100)
+    # Curve shape for 0.7 AUROC
+    roc_y = np.power(roc_x, 0.3)
+    
+    prc_x = np.linspace(0, 1, 100)
+    # For imbalanced dataset (starting at high precision, low recall)
+    prc_y = np.maximum(0.1 * (1 - np.exp(-5 * prc_x)), 0.01)
+    
+    roc_data = pd.DataFrame({'FPR': roc_x, 'TPR': roc_y})
+    prc_data = pd.DataFrame({'Recall': prc_x, 'Precision': prc_y})
+    
+    # Cumulative recall and precision by decile
+    cum_metrics = []
+    
+    recall_by_decile = [0.3, 0.45, 0.57, 0.67, 0.75, 0.82, 0.88, 0.93, 0.97, 1.0]
+    precision_by_decile = [0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]
+    
+    for i, decile in enumerate(range(1, 11)):
+        cum_metrics.append({
+            'Decile': decile,
+            'Cumulative Recall': recall_by_decile[i],
+            'Cumulative Precision': precision_by_decile[i]
+        })
+    
+    cum_metrics_df = pd.DataFrame(cum_metrics)
+    
+    return df, roc_data, prc_data, cum_metrics_df
+
+def create_mock_feature_data():
     # Feature importance and drift data
     features = [
         'Magic Level', 'Horn Toughness', 'Avg Poop Weight', 
@@ -159,36 +189,8 @@ def create_mock_data():
     feature_importance = pd.DataFrame(feature_importance_ts)
     feature_drift = pd.DataFrame(feature_drift_ts)
     
-    # Sort latest month by importance
-    latest_importance = feature_importance[feature_importance['date'] == dates[-1]]
+    # Sort latest month by importance and drift
     feature_importance = feature_importance.sort_values(['date', 'Importance'], ascending=[True, False])
     feature_drift = feature_drift.sort_values(['date', 'CSI'], ascending=[True, False])
     
-    # Create ROC and PRC curve data
-    roc_x = np.linspace(0, 1, 100)
-    # Curve shape for 0.7 AUROC
-    roc_y = np.power(roc_x, 0.3)
-    
-    prc_x = np.linspace(0, 1, 100)
-    # For imbalanced dataset (starting at high precision, low recall)
-    prc_y = np.maximum(0.1 * (1 - np.exp(-5 * prc_x)), 0.01)
-    
-    roc_data = pd.DataFrame({'FPR': roc_x, 'TPR': roc_y})
-    prc_data = pd.DataFrame({'Recall': prc_x, 'Precision': prc_y})
-    
-    # Cumulative recall and precision by decile
-    cum_metrics = []
-    
-    recall_by_decile = [0.3, 0.45, 0.57, 0.67, 0.75, 0.82, 0.88, 0.93, 0.97, 1.0]
-    precision_by_decile = [0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]
-    
-    for i, decile in enumerate(range(1, 11)):
-        cum_metrics.append({
-            'Decile': decile,
-            'Cumulative Recall': recall_by_decile[i],
-            'Cumulative Precision': precision_by_decile[i]
-        })
-    
-    cum_metrics_df = pd.DataFrame(cum_metrics)
-    
-    return df, feature_importance, feature_drift, roc_data, prc_data, cum_metrics_df
+    return feature_importance, feature_drift

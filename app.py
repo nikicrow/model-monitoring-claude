@@ -5,7 +5,8 @@ import plotly.express as px
 import dash
 from dash import dcc, html
 import dash_bootstrap_components as dbc
-from data.mock_data import create_mock_data
+
+from data.mock_data import create_mock_data, create_mock_feature_data
 from layout.section1_stability import section1_stability_analysis
 from layout.section2_conversions import section2_conversion_analysis
 from layout.section3_offline import section3_offline_metrics
@@ -14,23 +15,14 @@ from callbacks.section1_callbacks import register_callbacks_section1
 from callbacks.section2_callbacks import register_callbacks_section2
 from callbacks.section3_callbacks import register_callbacks_section3
 from callbacks.section4_callbacks import register_callbacks_section4
-from utils.filters import get_latest_month, get_all_months
+from components.month_selector import create_month_selector
 
 # Set random seed for reproducibility
 np.random.seed(42)
 
 # Generate mock data
-df, feature_importance, feature_drift, roc_data, prc_data, cum_metrics_df = create_mock_data()
-
-# Add month selector component
-def create_month_selector(df):
-    months = get_all_months(df)
-    return dcc.Dropdown(
-        id='month-selector',
-        options=[{'label': m, 'value': m} for m in months],
-        value=get_latest_month(df),
-        clearable=False
-    )
+df, roc_data, prc_data, cum_metrics_df = create_mock_data()
+feature_importance, feature_drift = create_mock_feature_data()
 
 # Create app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -44,6 +36,23 @@ app.layout = dbc.Container([
         ])
     ]),
     
+    # Navigation
+    dbc.Row([
+        dbc.Col([
+            html.H4("Jump to Section:", className="text-center mb-3"),
+            dbc.ListGroup(
+                [
+                    dbc.ListGroupItem("Model Scoring Pipeline Stability", href="#section1", external_link=True),
+                    dbc.ListGroupItem("Actual Conversion Rates", href="#section2", external_link=True),
+                    dbc.ListGroupItem("Model Accuracy", href="#section3", external_link=True),
+                    dbc.ListGroupItem("Feature Importance and Drift", href="#section4", external_link=True),
+                ],
+                horizontal=True,
+                className="justify-content-center mb-4"
+            )
+        ])
+    ]),
+    
     # Month Selector
     dbc.Row([
         dbc.Col([
@@ -53,16 +62,16 @@ app.layout = dbc.Container([
     ]),
 
     # Section 1: Model Scoring Pipeline Stability
-    section1_stability_analysis(),
+    html.Div(section1_stability_analysis(), id="section1"),
 
     # Section 2: Actual Conversion Rates
-    section2_conversion_analysis(),
+    html.Div(section2_conversion_analysis(), id="section2"),
 
     # Section 3: Model Accuracy
-    section3_offline_metrics(),
+    html.Div(section3_offline_metrics(), id="section3"),
 
     # Section 4: Feature Importance and Drift
-    section4_feature_analysis(),
+    html.Div(section4_feature_analysis(), id="section4"),
     
     # Footer
     dbc.Row([

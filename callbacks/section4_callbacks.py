@@ -11,10 +11,11 @@ def register_callbacks_section4(app, feature_importance, feature_drift):
         [Input('month-selector', 'value')]
     )
     def update_feature_analysis(selected_month):
+        print(selected_month)
         # Filter data for selected month
         monthly_feature_importance = filter_by_month(feature_importance, selected_month)
         monthly_feature_drift = filter_by_month(feature_drift, selected_month)
-        
+        print(monthly_feature_importance)
         # Generate feature importance visualization
         importance_fig = px.bar(
             monthly_feature_importance.sort_values('Importance', ascending=True),
