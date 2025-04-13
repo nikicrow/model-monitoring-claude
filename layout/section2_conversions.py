@@ -75,15 +75,6 @@ def section2_conversion_analysis():
         ]),
         
         # Charts for Section 2
-        dbc.Row([
-            # Line chart of conversion rates by bucket over time
-            dbc.Col([
-                dcc.Graph(
-                    id='conversion-rates-chart',
-                    config={'displayModeBar': True, 'displaylogo': False, 'toImageButtonOptions': {'format': 'png', 'filename': 'conversion_rates_chart'}}
-                )
-            ], width=12, className="mb-4"),
-        ]),
         
         dbc.Row([
             # Bar and line chart for conversions by decile

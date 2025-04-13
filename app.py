@@ -5,7 +5,6 @@ import plotly.express as px
 import dash
 from dash import dcc, html
 import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output
 from data.mock_data import create_mock_data
 from layout.section1_stability import section1_stability_analysis
 from layout.section2_conversions import section2_conversion_analysis
@@ -15,12 +14,23 @@ from callbacks.section1_callbacks import register_callbacks_section1
 from callbacks.section2_callbacks import register_callbacks_section2
 from callbacks.section3_callbacks import register_callbacks_section3
 from callbacks.section4_callbacks import register_callbacks_section4
+from utils.filters import get_latest_month, get_all_months
 
 # Set random seed for reproducibility
 np.random.seed(42)
 
 # Generate mock data
 df, feature_importance, feature_drift, roc_data, prc_data, cum_metrics_df = create_mock_data()
+
+# Add month selector component
+def create_month_selector(df):
+    months = get_all_months(df)
+    return dcc.Dropdown(
+        id='month-selector',
+        options=[{'label': m, 'value': m} for m in months],
+        value=get_latest_month(df),
+        clearable=False
+    )
 
 # Create app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -34,6 +44,14 @@ app.layout = dbc.Container([
         ])
     ]),
     
+    # Month Selector
+    dbc.Row([
+        dbc.Col([
+            create_month_selector(df),
+            html.P("Choose the month above that you would like to look at.", className="lead text-center mb-5")
+        ])
+    ]),
+
     # Section 1: Model Scoring Pipeline Stability
     section1_stability_analysis(),
 
@@ -55,8 +73,7 @@ app.layout = dbc.Container([
     ]),
 ], fluid=True)
 
-# Callbacks to update charts
-# Register callbacks
+# Register callbacks - pass month selector as a parameter
 register_callbacks_section1(app, df)
 register_callbacks_section2(app, df)
 register_callbacks_section3(app, roc_data, prc_data, cum_metrics_df)

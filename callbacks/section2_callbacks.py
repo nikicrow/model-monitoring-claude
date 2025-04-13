@@ -2,71 +2,25 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from utils.filters import filter_by_month
 
 def register_callbacks_section2(app, df):
-    # Line chart of conversion rates by bucket over time
-    @app.callback(
-        Output('conversion-rates-chart', 'figure'),
-        Input('conversion-rates-chart', 'id')
-    )
-    def update_conversion_rates_chart(_):
-        # Get data up to the second last month (to simulate having data only up to previous month)
-        conversion_data = df[df['month'] != df['month'].unique()[-1]]
-        
-        # Calculate conversion rates by bucket and month
-        bucket_conversion = conversion_data.groupby(['month', 'bucket']).agg(
-            customers=('customers', 'sum'),
-            conversions=('conversions', 'sum')
-        ).reset_index()
-        
-        bucket_conversion['conversion_rate'] = bucket_conversion['conversions'] / bucket_conversion['customers'] * 100
-        
-        # Define colors for the buckets
-        color_map = {'High': '#2ca02c', 'Medium': '#ffbb78', 'Low': '#ff7f0e'}
-        
-        fig = px.line(
-            bucket_conversion, 
-            x='month', 
-            y='conversion_rate',
-            color='bucket',
-            color_discrete_map=color_map,
-            title='Conversion Rates by Probability Bucket (Last 5 Months)',
-            labels={'month': 'Month', 'conversion_rate': 'Conversion Rate (%)', 'bucket': 'Probability Bucket'},
-            markers=True
-        )
-        
-        fig.update_traces(
-            line=dict(width=3),
-            marker=dict(size=8)
-        )
-        
-        fig.update_layout(
-            xaxis_title='Month',
-            yaxis_title='Conversion Rate (%)',
-            plot_bgcolor='white',
-            legend_title="Probability Bucket",
-            height=500
-        )
-        
-        return fig
-
-    # Bar and line chart for conversions by decile
+    
     @app.callback(
         Output('decile-conversion-chart', 'figure'),
-        Input('decile-conversion-chart', 'id')
+        [Input('month-selector', 'value')]
     )
-    def update_decile_conversion_chart(_):
-        # Get data from the second last month
-        last_month = df['month'].unique()[-2]
-        last_month_data = df[df['month'] == last_month]
+    def update_decile_conversion(selected_month):
+        filtered_df = filter_by_month(df, selected_month)
         
         # Group by decile
-        decile_conversion = last_month_data.groupby('decile').agg(
+        decile_conversion = filtered_df.groupby('decile').agg(
             customers=('customers', 'sum'),
             conversions=('conversions', 'sum')
         ).reset_index()
         
-        decile_conversion['conversion_rate'] = decile_conversion['conversions'] / decile_conversion['customers'] * 100
+        decile_conversion['conversion_rate'] = (decile_conversion['conversions'] / 
+                                              decile_conversion['customers'] * 100)
         
         # Create figure with secondary y-axis
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -97,7 +51,7 @@ def register_callbacks_section2(app, df):
         
         # Set titles
         fig.update_layout(
-            title_text='Conversions and Conversion Rate by Decile (Last Month)',
+            title_text=f'Conversions and Conversion Rate by Decile ({selected_month})',
             xaxis_title='Decile (1 = Lowest Propensity, 10 = Highest Propensity)',
             plot_bgcolor='white',
             height=500,

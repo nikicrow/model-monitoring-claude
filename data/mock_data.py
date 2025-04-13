@@ -125,25 +125,44 @@ def create_mock_data():
         'Friendship Power'
     ]
     
-    importance_values = [0.23, 0.18, 0.15, 0.12, 0.09, 0.08, 0.06, 0.04, 0.03, 0.02]
+    # Generate time series feature importance and drift data
+    feature_importance_ts = []
+    feature_drift_ts = []
     
-    feature_importance = pd.DataFrame({
-        'Feature': features,
-        'Importance': importance_values
-    })
+    for date in dates:
+        # Base importance values with some random variation
+        month_importance = [
+            max(0.01, v * (1 + np.random.uniform(-0.1, 0.1))) 
+            for v in [0.23, 0.18, 0.15, 0.12, 0.09, 0.08, 0.06, 0.04, 0.03, 0.02]
+        ]
+        # Normalize to sum to 1
+        month_importance = np.array(month_importance) / sum(month_importance)
+        
+        for feat, imp in zip(features, month_importance):
+            feature_importance_ts.append({
+                'date': date,
+                'month': date.strftime('%b %Y'),
+                'Feature': feat,
+                'Importance': imp
+            })
+            
+            # Generate drift metrics
+            csi = np.random.uniform(0.05, 0.3)
+            feature_drift_ts.append({
+                'date': date,
+                'month': date.strftime('%b %Y'),
+                'Feature': feat,
+                'CSI': csi,
+                'Status': 'Warning' if csi > 0.2 else 'Stable'
+            })
     
-    # Create feature drift data
-    feature_drift = pd.DataFrame({
-        'Feature': features,
-        'CSI': np.random.uniform(0.05, 0.3, size=len(features)),
-        'Status': ['Stable'] * len(features)
-    })
+    feature_importance = pd.DataFrame(feature_importance_ts)
+    feature_drift = pd.DataFrame(feature_drift_ts)
     
-    # Assign warning status for CSI > 0.2
-    feature_drift.loc[feature_drift['CSI'] > 0.2, 'Status'] = 'Warning'
-    
-    # Sort by importance
-    feature_drift = feature_drift.sort_values('CSI', ascending=False)
+    # Sort latest month by importance
+    latest_importance = feature_importance[feature_importance['date'] == dates[-1]]
+    feature_importance = feature_importance.sort_values(['date', 'Importance'], ascending=[True, False])
+    feature_drift = feature_drift.sort_values(['date', 'CSI'], ascending=[True, False])
     
     # Create ROC and PRC curve data
     roc_x = np.linspace(0, 1, 100)

@@ -1,4 +1,5 @@
 from dash.dependencies import Input, Output
+from utils.filters import filter_by_month
 import plotly.express as px
 import pandas as pd
 
@@ -80,40 +81,13 @@ def register_callbacks_section1(app, df):
     # Bar chart of customers by decile and bucket
     @app.callback(
         Output('decile-distribution-chart', 'figure'),
-        Input('decile-distribution-chart', 'id')
+        [Input('month-selector', 'value')]
     )
-    def update_decile_distribution_chart(_):
-        # Get the most recent month's data
-        latest_month = df['month'].unique()[-1]
-        latest_data = df[df['month'] == latest_month]
-        
-        # Group by decile and bucket
-        decile_bucket = latest_data.groupby(['decile', 'bucket'])['customers'].sum().reset_index()
-        
-        # Define colors for the buckets
-        color_map = {'High': '#2ca02c', 'Medium': '#ffbb78', 'Low': '#ff7f0e'}
-        
-        fig = px.bar(
-            decile_bucket, 
-            x='decile', 
-            y='customers',
-            color='bucket',
-            color_discrete_map=color_map,
-            title='Current Month Distribution of Customers by Decile and Probability Bucket',
-            labels={'decile': 'Decile', 'customers': 'Number of Customers', 'bucket': 'Probability Bucket'},
-            text_auto='.2s'
-        )
-        
-        fig.update_layout(
-            xaxis_title='Decile (1 = Lowest Propensity, 10 = Highest Propensity)',
-            yaxis_title='Number of Customers',
-            yaxis_tickformat=',',
-            plot_bgcolor='white',
-            legend_title="Probability Bucket",
-            height=500
-        )
-        
-        # Ensure x-axis shows all deciles
-        fig.update_xaxes(type='category', categoryorder='array', categoryarray=list(range(1, 11)))
-        
+    def update_decile_distribution(selected_month):
+        filtered_df = filter_by_month(df, selected_month)
+        fig = px.bar(filtered_df, 
+                    x='decile', 
+                    y='customers',
+                    color='bucket',
+                    title='Customer Distribution by Decile')
         return fig

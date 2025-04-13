@@ -1,4 +1,4 @@
-from dash import dcc, html
+from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
 
 
@@ -32,8 +32,23 @@ def section4_feature_analysis():
         dbc.Row([
             dbc.Col([
                 html.H4("Feature Drift Analysis", className="mb-3"),
-                html.P("Measured using Characteristic Stability Index (CSI). Lower values indicate more stable features.", className="mb-2"),
-                html.Div(id='feature-drift-table')
+                dash_table.DataTable(
+                    id='feature-drift-table',
+                    columns=[
+                        {'name': 'Feature', 'id': 'Feature'},
+                        {'name': 'CSI', 'id': 'CSI'},
+                        {'name': 'Status', 'id': 'Status'}
+                    ],
+                    style_table={'overflowX': 'auto'},
+                    style_cell={'textAlign': 'left'},
+                    style_data_conditional=[
+                        {
+                            'if': {'filter_query': '{Status} = "Warning"'},
+                            'backgroundColor': '#ffeb9c',
+                            'color': '#9c6500'
+                        }
+                    ]
+                )
             ], width=12, className="mb-4"),
         ]),
     ])
